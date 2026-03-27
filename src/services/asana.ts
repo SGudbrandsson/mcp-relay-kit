@@ -1,0 +1,151 @@
+/**
+ * @fileoverview Asana service adapter.
+ *
+ * Config keys:
+ *   - token: Asana Personal Access Token (required)
+ *   - workspace: Default workspace GID (optional, used as fallback)
+ */
+
+import type { ServiceAdapter, ServiceAction } from '../types.js';
+
+const ASANA_BASE = 'https://app.asana.com/api/1.0';
+
+async function asanaFetch(
+  path: string,
+  config: Record<string, unknown>,
+  options: { method?: string; body?: unknown } = {}
+): Promise<unknown> {
+  const token = config.token as string | undefined;
+  if (!token) throw new Error('Asana token not configured');
+
+  const res = await fetch(`${ASANA_BASE}${path}`, {
+    method: options.method ?? 'GET',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    },
+    ...(options.body ? { body: JSON.stringify(options.body) } : {}),
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Asana API ${res.status}: ${text}`);
+  }
+
+  const json = (await res.json()) as { data?: unknown };
+  return json.data ?? json;
+}
+
+const actions: ServiceAction[] = [
+  {
+    name: 'get_task',
+    description: 'Get details of a specific Asana task by its GID',
+    params: {
+      task_id: { type: 'string', description: 'Task GID', required: true },
+    },
+    execute: async (params, config) => {
+      return asanaFetch(`/tasks/${params.task_id}`, config);
+    },
+  },
+  {
+    name: 'update_task',
+    description: 'Update an Asana task (name, notes, completed status, due date, assignee)',
+    params: {
+      task_id: { type: 'string', description: 'Task GID', required: true },
+      name: { type: 'string', description: 'New task name', required: false },
+      notes: { type: 'string', description: 'New task notes/description', required: false },
+      completed: { type: 'boolean', description: 'Mark task as complete or incomplete', required: false },
+      due_on: { type: 'string', description: 'Due date (YYYY-MM-DD)', required: false },
+      assignee: { type: 'string', description: 'Assignee GID or email', required: false },
+    },
+    execute: async (params, config) => {
+      const { task_id, ...data } = params;
+      return asanaFetch(`/tasks/${task_id}`, config, {
+        method: 'PUT',
+        body: { data },
+      });
+    },
+  },
+  {
+    name: 'create_task',
+    description: 'Create a new task in an Asana project',
+    params: {
+      name: { type: 'string', description: 'Task name', required: true },
+      project_id: { type: 'string', description: 'Project GID to add the task to', required: true },
+      notes: { type: 'string', description: 'Task description', required: false },
+      due_on: { type: 'string', description: 'Due date (YYYY-MM-DD)', required: false },
+      assignee: { type: 'string', description: 'Assignee GID or email', required: false },
+    },
+    execute: async (params, config) => {
+      const { project_id, ...rest } = params;
+      return asanaFetch('/tasks', config, {
+        method: 'POST',
+        body: {
+          data: {
+            ...rest,
+            projects: [project_id],
+            workspace: config.workspace,
+          },
+        },
+      });
+    },
+  },
+  {
+    name: 'post_comment',
+    description: 'Post a comment (story) on an Asana task',
+    params: {
+      task_id: { type: 'string', description: 'Task GID', required: true },
+      text: { type: 'string', description: 'Comment text (supports basic formatting)', required: true },
+    },
+    execute: async (params, config) => {
+      return asanaFetch(`/tasks/${params.task_id}/stories`, config, {
+        method: 'POST',
+        body: { data: { text: params.text } },
+      });
+    },
+  },
+  {
+    name: 'search_tasks',
+    description: 'Search for tasks in the workspace by text query',
+    params: {
+      query: { type: 'string', description: 'Search text', required: true },
+      project_id: { type: 'string', description: 'Limit search to a specific project GID', required: false },
+    },
+    execute: async (params, config) => {
+      const workspace = config.workspace as string;
+      if (!workspace) throw new Error('Asana workspace not configured — required for search');
+      const searchParams = new URLSearchParams({
+        'text': params.query as string,
+        'type': 'task',
+        'opt_fields': 'name,completed,due_on,assignee.name,permalink_url',
+      });
+      if (params.project_id) {
+        searchParams.set('projects.any', params.project_id as string);
+      }
+      return asanaFetch(`/workspaces/${workspace}/typeahead?${searchParams}`, config);
+    },
+  },
+  {
+    name: 'list_project_tasks',
+    description: 'List tasks in an Asana project (incomplete by default)',
+    params: {
+      project_id: { type: 'string', description: 'Project GID', required: true },
+      completed: { type: 'boolean', description: 'Include completed tasks (default: false)', required: false },
+    },
+    execute: async (params, config) => {
+      const optFields = 'name,completed,due_on,assignee.name,permalink_url';
+      const completedSince = params.completed ? '' : '&completed_since=now';
+      return asanaFetch(
+        `/projects/${params.project_id}/tasks?opt_fields=${optFields}${completedSince}`,
+        config
+      );
+    },
+  },
+];
+
+export const asanaAdapter: ServiceAdapter = {
+  name: 'asana',
+  description: 'Asana project management — tasks, comments, and project tracking',
+  actions,
+};

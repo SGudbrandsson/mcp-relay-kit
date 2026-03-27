@@ -1,0 +1,8 @@
+{
+  "services": {
+    "asana": {
+      "token": "${ASANA_TOKEN}",
+      "workspace": "YOUR_WORKSPACE_GID"
+    }
+  }
+}
