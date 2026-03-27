@@ -6,9 +6,19 @@
  *   - workspace: Default workspace GID (optional, used as fallback)
  */
 
+import { readFileSync } from 'node:fs';
+import { basename, extname } from 'node:path';
 import type { ServiceAdapter, ServiceAction } from '../types.js';
 
 const ASANA_BASE = 'https://app.asana.com/api/1.0';
+
+/** Mime type lookup for common image/file extensions */
+const MIME_TYPES: Record<string, string> = {
+  png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', gif: 'image/gif',
+  webp: 'image/webp', svg: 'image/svg+xml', pdf: 'application/pdf',
+  txt: 'text/plain', json: 'application/json', csv: 'text/csv',
+  zip: 'application/zip', mp4: 'video/mp4',
+};
 
 async function asanaFetch(
   path: string,
@@ -140,6 +150,46 @@ const actions: ServiceAction[] = [
         `/projects/${params.project_id}/tasks?opt_fields=${optFields}${completedSince}`,
         config
       );
+    },
+  },
+  {
+    name: 'upload_attachment',
+    description: 'Upload a file (screenshot, image, document) as an attachment to an Asana task. Provide an absolute file path on the local filesystem.',
+    params: {
+      task_id: { type: 'string', description: 'Task GID to attach the file to', required: true },
+      file_path: { type: 'string', description: 'Absolute path to the file on disk (e.g., /tmp/screenshot.png)', required: true },
+      file_name: { type: 'string', description: 'Override filename (default: use basename of file_path)', required: false },
+    },
+    execute: async (params, config) => {
+      const token = config.token as string | undefined;
+      if (!token) throw new Error('Asana token not configured');
+
+      const filePath = params.file_path as string;
+      const fileName = (params.file_name as string) || basename(filePath);
+      const ext = extname(fileName).slice(1).toLowerCase();
+      const mimeType = MIME_TYPES[ext] || 'application/octet-stream';
+
+      const fileData = readFileSync(filePath);
+      const blob = new Blob([fileData], { type: mimeType });
+
+      const form = new FormData();
+      form.append('file', blob, fileName);
+
+      const res = await fetch(`${ASANA_BASE}/tasks/${params.task_id}/attachments`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: form,
+      });
+
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(`Asana API ${res.status}: ${text}`);
+      }
+
+      const json = (await res.json()) as { data?: unknown };
+      return json.data ?? json;
     },
   },
 ];

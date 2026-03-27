@@ -1,4 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { writeFileSync, unlinkSync, mkdirSync } from 'node:fs';
+import { join } from 'node:path';
+import { tmpdir } from 'node:os';
 import { asanaAdapter } from '../src/services/asana.js';
 
 // Mock global fetch
@@ -40,6 +43,7 @@ describe('Asana adapter', () => {
     expect(names).toContain('post_comment');
     expect(names).toContain('search_tasks');
     expect(names).toContain('list_project_tasks');
+    expect(names).toContain('upload_attachment');
   });
 
   describe('get_task', () => {
@@ -152,6 +156,49 @@ describe('Asana adapter', () => {
       const url = mockFetch.mock.calls[0][0] as string;
       expect(url).toContain('/projects/proj-1/tasks');
       expect(url).toContain('completed_since=now');
+    });
+  });
+
+  describe('upload_attachment', () => {
+    const action = asanaAdapter.actions.find((a) => a.name === 'upload_attachment')!;
+    const tmpFile = join(tmpdir(), 'mcp-gateway-test-upload.png');
+
+    beforeEach(() => {
+      mkdirSync(tmpdir(), { recursive: true });
+      // Write a tiny fake PNG
+      writeFileSync(tmpFile, Buffer.from([0x89, 0x50, 0x4e, 0x47]));
+    });
+
+    afterEach(() => {
+      try { unlinkSync(tmpFile); } catch {}
+    });
+
+    it('uploads a file as multipart form data', async () => {
+      mockFetch.mockResolvedValueOnce(mockAsanaResponse({ gid: '999', name: 'mcp-gateway-test-upload.png' }));
+      const result = await action.execute({ task_id: '123', file_path: tmpFile }, config);
+      expect(result).toEqual({ gid: '999', name: 'mcp-gateway-test-upload.png' });
+
+      const call = mockFetch.mock.calls[0];
+      expect(call[0]).toBe('https://app.asana.com/api/1.0/tasks/123/attachments');
+      expect(call[1].method).toBe('POST');
+      expect(call[1].headers.Authorization).toBe('Bearer test-token');
+      // Body should be FormData (no Content-Type header — fetch sets it with boundary)
+      expect(call[1].body).toBeInstanceOf(FormData);
+    });
+
+    it('uses custom filename when provided', async () => {
+      mockFetch.mockResolvedValueOnce(mockAsanaResponse({ gid: '999', name: 'screenshot.png' }));
+      await action.execute({ task_id: '123', file_path: tmpFile, file_name: 'screenshot.png' }, config);
+
+      const formData = mockFetch.mock.calls[0][1].body as FormData;
+      const file = formData.get('file') as File;
+      expect(file.name).toBe('screenshot.png');
+    });
+
+    it('throws on missing token', async () => {
+      await expect(action.execute({ task_id: '123', file_path: tmpFile }, {})).rejects.toThrow(
+        'Asana token not configured'
+      );
     });
   });
 });

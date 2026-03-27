@@ -63,7 +63,7 @@ describe('MCP Gateway E2E', () => {
     const result = await client.callTool({ name: 'search', arguments: { query: '' } });
     const text = (result.content as Array<{ text: string }>)[0].text;
     const actions = JSON.parse(text);
-    expect(actions.length).toBe(6); // All 6 asana actions
+    expect(actions.length).toBe(7); // All 7 asana actions
   });
 
   it('search for specific action returns matching results', async () => {
