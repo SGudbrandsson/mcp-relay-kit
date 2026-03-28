@@ -27,6 +27,7 @@ async function sentryFetch(
     headers: {
       Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json',
+      Accept: 'application/json',
     },
     ...(options.body ? { body: JSON.stringify(options.body) } : {}),
   });

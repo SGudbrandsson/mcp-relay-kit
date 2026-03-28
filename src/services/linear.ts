@@ -50,16 +50,20 @@ const actions: ServiceAction[] = [
       team_id: { type: 'string', description: 'Filter by team ID', required: false },
     },
     execute: async (params, config) => {
-      const filter = params.team_id ? `, filter: { team: { id: { eq: "${params.team_id}" } } }` : '';
+      const variables: Record<string, unknown> = { query: params.query };
+      const varDecl = params.team_id ? ', $teamId: String!' : '';
+      const filter = params.team_id ? ', filter: { team: { id: { eq: $teamId } } }' : '';
+      if (params.team_id) variables.teamId = params.team_id;
+
       return linearGraphQL(
-        `query ($query: String!) {
+        `query ($query: String!${varDecl}) {
           issueSearch(query: $query, first: 50${filter}) {
             nodes {
               id identifier title state { name } priority assignee { name } createdAt updatedAt
             }
           }
         }`,
-        { query: params.query },
+        variables,
         config
       );
     },
@@ -192,14 +196,18 @@ const actions: ServiceAction[] = [
       team_id: { type: 'string', description: 'Filter by team ID', required: false },
     },
     execute: async (params, config) => {
-      const filter = params.team_id ? `(filter: { accessibleTeams: { some: { id: { eq: "${params.team_id}" } } } })` : '';
+      const variables: Record<string, unknown> = {};
+      const varDecl = params.team_id ? '($teamId: String!)' : '';
+      const filter = params.team_id ? '(filter: { accessibleTeams: { some: { id: { eq: $teamId } } } })' : '';
+      if (params.team_id) variables.teamId = params.team_id;
+
       return linearGraphQL(
-        `query {
+        `query ${varDecl} {
           projects${filter} {
             nodes { id name state startDate targetDate }
           }
         }`,
-        {},
+        variables,
         config
       );
     },
@@ -249,14 +257,18 @@ const actions: ServiceAction[] = [
       team_id: { type: 'string', description: 'Filter by team ID', required: false },
     },
     execute: async (params, config) => {
-      const filter = params.team_id ? `(filter: { team: { id: { eq: "${params.team_id}" } } } )` : '';
+      const variables: Record<string, unknown> = {};
+      const varDecl = params.team_id ? '($teamId: String!)' : '';
+      const filter = params.team_id ? '(filter: { team: { id: { eq: $teamId } } })' : '';
+      if (params.team_id) variables.teamId = params.team_id;
+
       return linearGraphQL(
-        `query {
+        `query ${varDecl} {
           issueLabels${filter} {
             nodes { id name color }
           }
         }`,
-        {},
+        variables,
         config
       );
     },

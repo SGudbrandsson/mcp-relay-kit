@@ -91,6 +91,10 @@ describe('PostHog adapter', () => {
       expect(url).toContain('/api/projects/12345/persons/');
       expect(url).toContain('distinct_id=user-abc');
     });
+
+    it('throws when neither person_id nor distinct_id is provided', async () => {
+      await expect(action.execute({}, config)).rejects.toThrow('Either person_id or distinct_id is required');
+    });
   });
 
   describe('search_persons', () => {
