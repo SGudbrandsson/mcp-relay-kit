@@ -15,6 +15,25 @@
     "posthog": {
       "token": "${POSTHOG_PERSONAL_API_KEY}",
       "project_id": "YOUR_PROJECT_ID"
+    },
+    "cloudflare": {
+      "token": "${CLOUDFLARE_API_TOKEN}",
+      "account_id": "YOUR_ACCOUNT_ID",
+      "zone_id": "YOUR_ZONE_ID"
+    },
+    "coolify": {
+      "token": "${COOLIFY_API_TOKEN}",
+      "baseUrl": "http://your-coolify-host:8000"
+    },
+    "vercel": {
+      "token": "${VERCEL_TOKEN}",
+      "team_id": "team_xxxx"
+    },
+    "supabase": {
+      "token": "${SUPABASE_MANAGEMENT_TOKEN}",
+      "service_role_key": "${SUPABASE_SERVICE_ROLE_KEY}",
+      "project_ref": "YOUR_PROJECT_REF",
+      "baseUrl": "supabase.co"
     }
   }
 }
