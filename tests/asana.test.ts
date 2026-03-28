@@ -43,6 +43,12 @@ describe('Asana adapter', () => {
     expect(names).toContain('post_comment');
     expect(names).toContain('search_tasks');
     expect(names).toContain('list_project_tasks');
+    expect(names).toContain('get_task_comments');
+    expect(names).toContain('update_comment');
+    expect(names).toContain('delete_comment');
+    expect(names).toContain('delete_task');
+    expect(names).toContain('add_task_to_project');
+    expect(names).toContain('get_task_attachments');
     expect(names).toContain('upload_attachment');
   });
 
@@ -156,6 +162,99 @@ describe('Asana adapter', () => {
       const url = mockFetch.mock.calls[0][0] as string;
       expect(url).toContain('/projects/proj-1/tasks');
       expect(url).toContain('completed_since=now');
+    });
+  });
+
+  describe('get_task_comments', () => {
+    const action = asanaAdapter.actions.find((a) => a.name === 'get_task_comments')!;
+
+    it('fetches comments for a task', async () => {
+      mockFetch.mockResolvedValueOnce(mockAsanaResponse([{ gid: '1', text: 'Hello', type: 'comment' }]));
+      const result = await action.execute({ task_id: '123' }, config);
+      expect(result).toEqual([{ gid: '1', text: 'Hello', type: 'comment' }]);
+      const url = mockFetch.mock.calls[0][0] as string;
+      expect(url).toContain('/tasks/123/stories');
+    });
+  });
+
+  describe('update_comment', () => {
+    const action = asanaAdapter.actions.find((a) => a.name === 'update_comment')!;
+
+    it('updates a comment by story GID', async () => {
+      mockFetch.mockResolvedValueOnce(mockAsanaResponse({ gid: '456', text: 'Updated' }));
+      await action.execute({ story_id: '456', text: 'Updated' }, config);
+      expect(mockFetch).toHaveBeenCalledWith(
+        'https://app.asana.com/api/1.0/stories/456',
+        expect.objectContaining({
+          method: 'PUT',
+          body: JSON.stringify({ data: { text: 'Updated' } }),
+        })
+      );
+    });
+  });
+
+  describe('delete_comment', () => {
+    const action = asanaAdapter.actions.find((a) => a.name === 'delete_comment')!;
+
+    it('deletes a comment by story GID', async () => {
+      mockFetch.mockResolvedValueOnce(mockAsanaResponse({}));
+      await action.execute({ story_id: '456' }, config);
+      expect(mockFetch).toHaveBeenCalledWith(
+        'https://app.asana.com/api/1.0/stories/456',
+        expect.objectContaining({ method: 'DELETE' })
+      );
+    });
+  });
+
+  describe('delete_task', () => {
+    const action = asanaAdapter.actions.find((a) => a.name === 'delete_task')!;
+
+    it('deletes a task by GID', async () => {
+      mockFetch.mockResolvedValueOnce(mockAsanaResponse({}));
+      await action.execute({ task_id: '123' }, config);
+      expect(mockFetch).toHaveBeenCalledWith(
+        'https://app.asana.com/api/1.0/tasks/123',
+        expect.objectContaining({ method: 'DELETE' })
+      );
+    });
+  });
+
+  describe('add_task_to_project', () => {
+    const action = asanaAdapter.actions.find((a) => a.name === 'add_task_to_project')!;
+
+    it('adds a task to a project', async () => {
+      mockFetch.mockResolvedValueOnce(mockAsanaResponse({}));
+      await action.execute({ task_id: '123', project_id: 'proj-1' }, config);
+      expect(mockFetch).toHaveBeenCalledWith(
+        'https://app.asana.com/api/1.0/tasks/123/addProject',
+        expect.objectContaining({
+          method: 'POST',
+          body: JSON.stringify({ data: { project: 'proj-1' } }),
+        })
+      );
+    });
+
+    it('includes section when provided', async () => {
+      mockFetch.mockResolvedValueOnce(mockAsanaResponse({}));
+      await action.execute({ task_id: '123', project_id: 'proj-1', section_id: 'sec-1' }, config);
+      expect(mockFetch).toHaveBeenCalledWith(
+        'https://app.asana.com/api/1.0/tasks/123/addProject',
+        expect.objectContaining({
+          body: JSON.stringify({ data: { project: 'proj-1', section: 'sec-1' } }),
+        })
+      );
+    });
+  });
+
+  describe('get_task_attachments', () => {
+    const action = asanaAdapter.actions.find((a) => a.name === 'get_task_attachments')!;
+
+    it('lists attachments for a task', async () => {
+      mockFetch.mockResolvedValueOnce(mockAsanaResponse([{ gid: '1', name: 'screenshot.png' }]));
+      const result = await action.execute({ task_id: '123' }, config);
+      expect(result).toEqual([{ gid: '1', name: 'screenshot.png' }]);
+      const url = mockFetch.mock.calls[0][0] as string;
+      expect(url).toContain('/tasks/123/attachments');
     });
   });
 

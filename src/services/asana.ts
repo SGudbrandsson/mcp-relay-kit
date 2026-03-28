@@ -60,11 +60,12 @@ const actions: ServiceAction[] = [
   },
   {
     name: 'update_task',
-    description: 'Update an Asana task (name, notes, completed status, due date, assignee)',
+    description: 'Update an Asana task (name, notes/description, completed status, due date, assignee). Use html_notes for rich formatting.',
     params: {
       task_id: { type: 'string', description: 'Task GID', required: true },
       name: { type: 'string', description: 'New task name', required: false },
-      notes: { type: 'string', description: 'New task notes/description', required: false },
+      notes: { type: 'string', description: 'New task description (plain text)', required: false },
+      html_notes: { type: 'string', description: 'New task description in HTML (e.g., "<body><b>Bold</b></body>")', required: false },
       completed: { type: 'boolean', description: 'Mark task as complete or incomplete', required: false },
       due_on: { type: 'string', description: 'Due date (YYYY-MM-DD)', required: false },
       assignee: { type: 'string', description: 'Assignee GID or email', required: false },
@@ -79,25 +80,29 @@ const actions: ServiceAction[] = [
   },
   {
     name: 'create_task',
-    description: 'Create a new task in an Asana project',
+    description: 'Create a new task in an Asana project. Use html_notes for rich formatting (bold, links, lists).',
     params: {
       name: { type: 'string', description: 'Task name', required: true },
       project_id: { type: 'string', description: 'Project GID to add the task to', required: true },
-      notes: { type: 'string', description: 'Task description', required: false },
+      notes: { type: 'string', description: 'Task description (plain text)', required: false },
+      html_notes: { type: 'string', description: 'Task description in HTML (e.g., "<body><b>Bold</b> text</body>")', required: false },
       due_on: { type: 'string', description: 'Due date (YYYY-MM-DD)', required: false },
       assignee: { type: 'string', description: 'Assignee GID or email', required: false },
+      section_id: { type: 'string', description: 'Section GID to place the task in (optional)', required: false },
     },
     execute: async (params, config) => {
-      const { project_id, ...rest } = params;
+      const { project_id, section_id, ...rest } = params;
+      const data: Record<string, unknown> = {
+        ...rest,
+        projects: [project_id],
+        workspace: config.workspace,
+      };
+      if (section_id) {
+        data.memberships = [{ project: project_id, section: section_id }];
+      }
       return asanaFetch('/tasks', config, {
         method: 'POST',
-        body: {
-          data: {
-            ...rest,
-            projects: [project_id],
-            workspace: config.workspace,
-          },
-        },
+        body: { data },
       });
     },
   },
@@ -148,6 +153,87 @@ const actions: ServiceAction[] = [
       const completedSince = params.completed ? '' : '&completed_since=now';
       return asanaFetch(
         `/projects/${params.project_id}/tasks?opt_fields=${optFields}${completedSince}`,
+        config
+      );
+    },
+  },
+  {
+    name: 'get_task_comments',
+    description: 'Get all comments (stories) on an Asana task',
+    params: {
+      task_id: { type: 'string', description: 'Task GID', required: true },
+    },
+    execute: async (params, config) => {
+      return asanaFetch(
+        `/tasks/${params.task_id}/stories?opt_fields=created_by.name,text,created_at,type,resource_subtype`,
+        config
+      );
+    },
+  },
+  {
+    name: 'update_comment',
+    description: 'Update the text of an existing comment (story) on an Asana task. Use get_task_comments to find the story GID first.',
+    params: {
+      story_id: { type: 'string', description: 'Story (comment) GID', required: true },
+      text: { type: 'string', description: 'New comment text', required: true },
+    },
+    execute: async (params, config) => {
+      return asanaFetch(`/stories/${params.story_id}`, config, {
+        method: 'PUT',
+        body: { data: { text: params.text } },
+      });
+    },
+  },
+  {
+    name: 'delete_comment',
+    description: 'Delete a comment (story) from an Asana task. Use get_task_comments to find the story GID first.',
+    params: {
+      story_id: { type: 'string', description: 'Story (comment) GID to delete', required: true },
+    },
+    execute: async (params, config) => {
+      return asanaFetch(`/stories/${params.story_id}`, config, {
+        method: 'DELETE',
+      });
+    },
+  },
+  {
+    name: 'delete_task',
+    description: 'Delete an Asana task permanently',
+    params: {
+      task_id: { type: 'string', description: 'Task GID to delete', required: true },
+    },
+    execute: async (params, config) => {
+      return asanaFetch(`/tasks/${params.task_id}`, config, {
+        method: 'DELETE',
+      });
+    },
+  },
+  {
+    name: 'add_task_to_project',
+    description: 'Add an existing task to a project (optionally in a specific section)',
+    params: {
+      task_id: { type: 'string', description: 'Task GID', required: true },
+      project_id: { type: 'string', description: 'Project GID to add the task to', required: true },
+      section_id: { type: 'string', description: 'Section GID within the project (optional)', required: false },
+    },
+    execute: async (params, config) => {
+      const body: Record<string, unknown> = { project: params.project_id };
+      if (params.section_id) body.section = params.section_id;
+      return asanaFetch(`/tasks/${params.task_id}/addProject`, config, {
+        method: 'POST',
+        body: { data: body },
+      });
+    },
+  },
+  {
+    name: 'get_task_attachments',
+    description: 'List all attachments on an Asana task',
+    params: {
+      task_id: { type: 'string', description: 'Task GID', required: true },
+    },
+    execute: async (params, config) => {
+      return asanaFetch(
+        `/tasks/${params.task_id}/attachments?opt_fields=name,download_url,host,view_url,created_at`,
         config
       );
     },
