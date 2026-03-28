@@ -3,6 +3,18 @@
     "asana": {
       "token": "${ASANA_TOKEN}",
       "workspace": "YOUR_WORKSPACE_GID"
+    },
+    "sentry": {
+      "token": "${SENTRY_AUTH_TOKEN}",
+      "organization": "YOUR_ORG_SLUG",
+      "project": "YOUR_PROJECT_SLUG"
+    },
+    "linear": {
+      "token": "${LINEAR_API_KEY}"
+    },
+    "posthog": {
+      "token": "${POSTHOG_PERSONAL_API_KEY}",
+      "project_id": "YOUR_PROJECT_ID"
     }
   }
 }
