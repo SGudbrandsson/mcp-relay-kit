@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { loadConfig } from '../src/config.js';
 
 describe('loadConfig', () => {
-  const tmpDir = join(tmpdir(), 'mcp-gateway-test');
+  const tmpDir = join(tmpdir(), 'codemode-gateway-test');
   let configPath: string;
 
   beforeEach(() => {
@@ -69,7 +69,7 @@ describe('loadConfig', () => {
   });
 
   it('returns empty config for nonexistent file', () => {
-    process.env.GATEWAY_CONFIG = '/tmp/nonexistent-mcp-gateway-config.json';
+    process.env.GATEWAY_CONFIG = '/tmp/nonexistent-codemode-gateway-config.json';
     const config = loadConfig();
     expect(config).toEqual({ services: {} });
   });

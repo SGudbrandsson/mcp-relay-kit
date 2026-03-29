@@ -260,7 +260,7 @@ describe('Asana adapter', () => {
 
   describe('upload_attachment', () => {
     const action = asanaAdapter.actions.find((a) => a.name === 'upload_attachment')!;
-    const tmpFile = join(tmpdir(), 'mcp-gateway-test-upload.png');
+    const tmpFile = join(tmpdir(), 'codemode-gateway-test-upload.png');
 
     beforeEach(() => {
       mkdirSync(tmpdir(), { recursive: true });
@@ -273,9 +273,9 @@ describe('Asana adapter', () => {
     });
 
     it('uploads a file as multipart form data', async () => {
-      mockFetch.mockResolvedValueOnce(mockAsanaResponse({ gid: '999', name: 'mcp-gateway-test-upload.png' }));
+      mockFetch.mockResolvedValueOnce(mockAsanaResponse({ gid: '999', name: 'codemode-gateway-test-upload.png' }));
       const result = await action.execute({ task_id: '123', file_path: tmpFile }, config);
-      expect(result).toEqual({ gid: '999', name: 'mcp-gateway-test-upload.png' });
+      expect(result).toEqual({ gid: '999', name: 'codemode-gateway-test-upload.png' });
 
       const call = mockFetch.mock.calls[0];
       expect(call[0]).toBe('https://app.asana.com/api/1.0/tasks/123/attachments');

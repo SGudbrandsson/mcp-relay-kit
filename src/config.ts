@@ -23,7 +23,7 @@ export function loadConfig(): GatewayConfig {
     return JSON.parse(interpolated) as GatewayConfig;
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    console.error(`[mcp-gateway] Failed to load config from ${configPath}: ${msg}`);
+    console.error(`[codemode-gateway] Failed to load config from ${configPath}: ${msg}`);
     return { services: {} };
   }
 }

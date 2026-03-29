@@ -2,9 +2,9 @@
   "mcpServers": {
     "gateway": {
       "command": "npx",
-      "args": ["tsx", "/home/siggi/sources/mcp-gateway/src/server.ts"],
+      "args": ["tsx", "/home/siggi/sources/codemode-gateway/src/server.ts"],
       "env": {
-        "GATEWAY_CONFIG": "/home/siggi/.config/mcp-gateway/keeps.json"
+        "GATEWAY_CONFIG": "/home/siggi/.config/codemode-gateway/keeps.json"
       }
     }
   }
