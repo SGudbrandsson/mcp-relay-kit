@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * @fileoverview MCP Gateway server.
+ * @fileoverview Codemode Gateway server.
  *
  * Exposes all registered services through 2 tools:
  *   - search(query) — discover available actions
@@ -27,18 +27,18 @@ for (const [configKey, serviceConfig] of Object.entries(config.services)) {
   const adapter = availableAdapters[adapterName];
   if (adapter) {
     registry.register(adapter, serviceConfig, configKey);
-    console.error(`[mcp-gateway] Registered service: ${configKey}`);
+    console.error(`[codemode-gateway] Registered service: ${configKey}`);
   } else {
-    console.error(`[mcp-gateway] Unknown service in config: ${configKey} (available: ${Object.keys(availableAdapters).join(', ')})`);
+    console.error(`[codemode-gateway] Unknown service in config: ${configKey} (available: ${Object.keys(availableAdapters).join(', ')})`);
   }
 }
 
 if (registry.serviceNames.length === 0) {
-  console.error('[mcp-gateway] Warning: No services registered. Set GATEWAY_CONFIG to a config file path.');
+  console.error('[codemode-gateway] Warning: No services registered. Set GATEWAY_CONFIG to a config file path.');
 }
 
 const server = new McpServer({
-  name: 'mcp-gateway',
+  name: 'codemode-gateway',
   version: '0.1.0',
 });
 
@@ -91,10 +91,10 @@ server.tool(
 async function main() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error(`[mcp-gateway] Server running (services: ${registry.serviceNames.join(', ') || 'none'})`);
+  console.error(`[codemode-gateway] Server running (services: ${registry.serviceNames.join(', ') || 'none'})`);
 }
 
 main().catch((err) => {
-  console.error('[mcp-gateway] Fatal error:', err);
+  console.error('[codemode-gateway] Fatal error:', err);
   process.exit(1);
 });

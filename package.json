@@ -1,11 +1,11 @@
 {
-  "name": "mcp-gateway",
+  "name": "codemode-gateway",
   "version": "0.1.0",
   "description": "Lightweight MCP gateway — exposes multiple services (Asana, Slack, Sentry, PostHog, etc.) as 2 tools: search + execute",
   "type": "module",
   "main": "dist/server.js",
   "bin": {
-    "mcp-gateway": "dist/server.js"
+    "codemode-gateway": "dist/server.js"
   },
   "scripts": {
     "build": "tsc",

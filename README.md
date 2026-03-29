@@ -1,4 +1,4 @@
-# mcp-gateway
+# codemode-gateway
 
 Lightweight MCP server that exposes multiple services through just 2 tools: **search** and **execute**.
 
@@ -23,7 +23,7 @@ The gateway acts as a thin dispatcher — no sandbox, no V8 isolates, no heavy i
 ### 1. Install dependencies
 
 ```bash
-cd ~/sources/mcp-gateway
+cd ~/sources/codemode-gateway
 npm install
 ```
 
@@ -40,7 +40,7 @@ npm install
 }
 ```
 
-Save as e.g. `~/.config/mcp-gateway/keeps.json`.
+Save as e.g. `~/.config/codemode-gateway/keeps.json`.
 
 Environment variables in `${VAR}` syntax are interpolated at load time.
 
@@ -51,9 +51,9 @@ Environment variables in `${VAR}` syntax are interpolated at load time.
   "mcpServers": {
     "gateway": {
       "command": "npx",
-      "args": ["tsx", "/home/siggi/sources/mcp-gateway/src/server.ts"],
+      "args": ["tsx", "/home/siggi/sources/codemode-gateway/src/server.ts"],
       "env": {
-        "GATEWAY_CONFIG": "/home/siggi/.config/mcp-gateway/keeps.json"
+        "GATEWAY_CONFIG": "/home/siggi/.config/codemode-gateway/keeps.json"
       }
     }
   }
@@ -67,9 +67,9 @@ Or after building:
   "mcpServers": {
     "gateway": {
       "command": "node",
-      "args": ["/home/siggi/sources/mcp-gateway/dist/server.js"],
+      "args": ["/home/siggi/sources/codemode-gateway/dist/server.js"],
       "env": {
-        "GATEWAY_CONFIG": "/home/siggi/.config/mcp-gateway/keeps.json"
+        "GATEWAY_CONFIG": "/home/siggi/.config/codemode-gateway/keeps.json"
       }
     }
   }
@@ -300,7 +300,7 @@ You can register the same service multiple times with different configurations u
 Different projects can use different configs pointing to different services:
 
 ```
-~/.config/mcp-gateway/
+~/.config/codemode-gateway/
 ├── keeps.json      → asana + slack + sentry
 ├── codeman.json    → asana + github
 └── personal.json   → asana

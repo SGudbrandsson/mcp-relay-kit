@@ -21,7 +21,7 @@ Create a JSON file with your service credentials:
 }
 ```
 
-Save this as `~/.config/mcp-gateway/config.json` (or any path you prefer).
+Save this as `~/.config/codemode-gateway/config.json` (or any path you prefer).
 
 **Multiple instances:** To connect to the same service multiple times (e.g. production and staging Sentry), use `service:label` keys:
 
@@ -64,7 +64,7 @@ Add to your project's `.mcp.json` (or `~/.claude/mcp.json` for global):
   "mcpServers": {
     "gateway": {
       "command": "node",
-      "args": ["/path/to/mcp-gateway/dist/server.js"],
+      "args": ["/path/to/codemode-gateway/dist/server.js"],
       "env": {
         "GATEWAY_CONFIG": "/path/to/config.json"
       }
@@ -80,7 +80,7 @@ Or use `npx` to avoid local installation:
   "mcpServers": {
     "gateway": {
       "command": "npx",
-      "args": ["-y", "mcp-gateway"],
+      "args": ["-y", "codemode-gateway"],
       "env": {
         "GATEWAY_CONFIG": "/path/to/config.json"
       }
@@ -98,7 +98,7 @@ Add to `~/.gemini/settings.json`:
   "mcpServers": {
     "gateway": {
       "command": "node",
-      "args": ["/path/to/mcp-gateway/dist/server.js"],
+      "args": ["/path/to/codemode-gateway/dist/server.js"],
       "env": {
         "GATEWAY_CONFIG": "/path/to/config.json"
       }
@@ -116,7 +116,7 @@ Add to your Codex MCP configuration:
   "mcpServers": {
     "gateway": {
       "command": "node",
-      "args": ["/path/to/mcp-gateway/dist/server.js"],
+      "args": ["/path/to/codemode-gateway/dist/server.js"],
       "env": {
         "GATEWAY_CONFIG": "/path/to/config.json"
       }
@@ -130,7 +130,7 @@ Add to your Codex MCP configuration:
 Go to **Settings → MCP Servers → Add Server** and configure:
 
 - **Name:** `gateway`
-- **Command:** `node /path/to/mcp-gateway/dist/server.js`
+- **Command:** `node /path/to/codemode-gateway/dist/server.js`
 - **Environment:** `GATEWAY_CONFIG=/path/to/config.json`
 
 Or add to `.cursor/mcp.json` in your project root:
@@ -140,7 +140,7 @@ Or add to `.cursor/mcp.json` in your project root:
   "mcpServers": {
     "gateway": {
       "command": "node",
-      "args": ["/path/to/mcp-gateway/dist/server.js"],
+      "args": ["/path/to/codemode-gateway/dist/server.js"],
       "env": {
         "GATEWAY_CONFIG": "/path/to/config.json"
       }
@@ -158,7 +158,7 @@ Add to your Windsurf MCP settings (`.windsurf/mcp.json`):
   "mcpServers": {
     "gateway": {
       "command": "node",
-      "args": ["/path/to/mcp-gateway/dist/server.js"],
+      "args": ["/path/to/codemode-gateway/dist/server.js"],
       "env": {
         "GATEWAY_CONFIG": "/path/to/config.json"
       }
@@ -171,7 +171,7 @@ Add to your Windsurf MCP settings (`.windsurf/mcp.json`):
 
 The gateway uses the standard MCP stdio transport. Any tool that supports MCP servers can connect with:
 
-- **Command:** `node /path/to/mcp-gateway/dist/server.js`
+- **Command:** `node /path/to/codemode-gateway/dist/server.js`
 - **Environment:** `GATEWAY_CONFIG=/path/to/config.json`
 
 ## 3. Build First
@@ -179,7 +179,7 @@ The gateway uses the standard MCP stdio transport. Any tool that supports MCP se
 Before running, compile the TypeScript:
 
 ```bash
-cd /path/to/mcp-gateway
+cd /path/to/codemode-gateway
 npm install
 npm run build
 ```
