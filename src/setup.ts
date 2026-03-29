@@ -259,6 +259,10 @@ async function configureAllServices(
         console.log('  Label is required for additional instances.');
         continue;
       }
+      if (!/^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?$/.test(label)) {
+        console.log('  Label must be alphanumeric (hyphens allowed, e.g. "staging", "us-west-2").');
+        continue;
+      }
       const extraConfig = await configureService(meta, ask, label);
       instances.push({ configKey: `${name}:${label}`, config: extraConfig });
     }
@@ -277,7 +281,7 @@ function buildGatewayConfig(instances: ServiceInstance[]): Record<string, unknow
   return { services };
 }
 
-function writeFileWithBackup(filePath: string, content: string): string | null {
+export function writeFileWithBackup(filePath: string, content: string): string | null {
   const dir = path.dirname(filePath);
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
@@ -300,8 +304,8 @@ async function writeConfigFile(
   printHeader('Write Gateway Config');
 
   const defaultPath = path.join(os.homedir(), '.config', 'codemode-gateway', 'config.json');
-  const pathInput = await ask(`Config file path [${defaultPath}]: `);
-  const configPath = pathInput || defaultPath;
+  const rawPath = await ask(`Config file path [${defaultPath}]: `);
+  const configPath = (rawPath || defaultPath).replace(/^~(?=\/|$)/, os.homedir());
 
   const gatewayConfig = buildGatewayConfig(instances);
   const content = JSON.stringify(gatewayConfig, null, 2) + '\n';

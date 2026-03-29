@@ -1,5 +1,8 @@
-import { describe, it, expect } from 'vitest';
-import { resolveValue, generateBackupPath, mergeIntoMcpConfig } from '../src/setup.js';
+import { describe, it, expect, afterEach } from 'vitest';
+import * as fs from 'node:fs';
+import * as os from 'node:os';
+import * as path from 'node:path';
+import { resolveValue, generateBackupPath, mergeIntoMcpConfig, writeFileWithBackup } from '../src/setup.js';
 
 describe('resolveValue', () => {
   it('wraps ALL_CAPS input as env var reference', () => {
@@ -68,5 +71,39 @@ describe('mergeIntoMcpConfig', () => {
     });
     expect(result.mcpServers['codemode-gateway'].command).toBe('node');
     expect(result.mcpServers['codemode-gateway'].args).toEqual(['/new/server.js']);
+  });
+});
+
+describe('writeFileWithBackup', () => {
+  let tmpDir: string;
+
+  afterEach(() => {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  });
+
+  it('writes to a new file in a new directory and returns null', () => {
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'setup-test-'));
+    const filePath = path.join(tmpDir, 'subdir', 'config.json');
+    const content = '{"services":{}}';
+
+    const result = writeFileWithBackup(filePath, content);
+
+    expect(result).toBeNull();
+    expect(fs.readFileSync(filePath, 'utf-8')).toBe(content);
+  });
+
+  it('creates a backup and writes new content when file already exists', () => {
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'setup-test-'));
+    const filePath = path.join(tmpDir, 'config.json');
+    const originalContent = '{"original":true}';
+    const newContent = '{"updated":true}';
+    fs.writeFileSync(filePath, originalContent, 'utf-8');
+
+    const backupPath = writeFileWithBackup(filePath, newContent);
+
+    expect(backupPath).not.toBeNull();
+    expect(backupPath).toMatch(/config\.json\.bak\.\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}$/);
+    expect(fs.readFileSync(backupPath!, 'utf-8')).toBe(originalContent);
+    expect(fs.readFileSync(filePath, 'utf-8')).toBe(newContent);
   });
 });
