@@ -226,10 +226,11 @@ const actions: ServiceAction[] = [
       type: { type: 'string', description: 'Variable type (plain, secret, encrypted)', required: false, enum: ['plain', 'secret', 'encrypted'] },
     },
     execute: async (params, config) => {
+      const targetStr = params.target as string;
       const body: Record<string, unknown> = {
         key: params.key,
         value: params.value,
-        target: params.target,
+        target: targetStr.includes(',') ? targetStr.split(',').map(s => s.trim()) : [targetStr],
       };
       if (params.type) body.type = params.type;
       return vercelFetch(`/v10/projects/${validatePathSegment(params.project_id, 'project_id')}/env`, config, { method: 'POST', body });

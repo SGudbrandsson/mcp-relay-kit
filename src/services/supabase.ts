@@ -32,7 +32,7 @@ function validateStoragePath(value: unknown, name: string): string {
 function requireProjectRef(config: Record<string, unknown>): string {
   const ref = config.project_ref as string | undefined;
   if (!ref) throw new Error('Supabase project_ref not configured');
-  return ref;
+  return validatePathSegment(ref, 'project_ref');
 }
 
 async function supabaseManagementFetch(
@@ -126,15 +126,15 @@ const actions: ServiceAction[] = [
   // --- Database (Management API) ---
   {
     name: 'run_sql',
-    description: 'Run a SQL query against the Supabase database',
+    description: 'Run a SQL query against the Supabase database. Defaults to read-only; set read_only to "false" to allow destructive operations (INSERT, UPDATE, DELETE, DROP, etc.)',
     params: {
       query: { type: 'string', description: 'SQL query to execute', required: true },
-      read_only: { type: 'string', description: 'Run as read-only query (true/false)', required: false },
+      read_only: { type: 'string', description: 'Run as read-only query (true/false, defaults to true)', required: false },
     },
     execute: async (params, config) => {
       const ref = requireProjectRef(config);
       const body: Record<string, unknown> = { query: params.query };
-      if (params.read_only) body.read_only = params.read_only === 'true';
+      body.read_only = params.read_only === 'false' ? false : true;
       return supabaseManagementFetch(`/v1/projects/${ref}/database/query`, config, { method: 'POST', body });
     },
   },
@@ -257,7 +257,11 @@ const actions: ServiceAction[] = [
     execute: async (params, config) => {
       const body: Record<string, unknown> = { id: params.id, name: params.name };
       if (params.public) body.public = params.public === 'true';
-      if (params.file_size_limit) body.file_size_limit = parseInt(params.file_size_limit as string, 10);
+      if (params.file_size_limit) {
+        const fileSizeLimit = parseInt(params.file_size_limit as string, 10);
+        if (isNaN(fileSizeLimit)) throw new Error('file_size_limit must be a number');
+        body.file_size_limit = fileSizeLimit;
+      }
       if (params.allowed_mime_types) body.allowed_mime_types = (params.allowed_mime_types as string).split(',').map((s) => s.trim());
       return supabaseProjectFetch('/storage/v1/bucket', config, { method: 'POST', body });
     },
@@ -284,7 +288,11 @@ const actions: ServiceAction[] = [
     execute: async (params, config) => {
       const body: Record<string, unknown> = {};
       if (params.prefix) body.prefix = params.prefix;
-      if (params.limit) body.limit = parseInt(params.limit as string, 10);
+      if (params.limit) {
+        const limit = parseInt(params.limit as string, 10);
+        if (isNaN(limit)) throw new Error('limit must be a number');
+        body.limit = limit;
+      }
       if (params.search) body.search = params.search;
       return supabaseProjectFetch(`/storage/v1/object/list/${validatePathSegment(params.bucket_id, 'bucket_id')}`, config, { method: 'POST', body });
     },
@@ -313,10 +321,12 @@ const actions: ServiceAction[] = [
       expires_in: { type: 'string', description: 'URL expiration time in seconds', required: true },
     },
     execute: async (params, config) => {
+      const expiresIn = parseInt(params.expires_in as string, 10);
+      if (isNaN(expiresIn)) throw new Error('expires_in must be a number');
       return supabaseProjectFetch(
         `/storage/v1/object/sign/${validatePathSegment(params.bucket_id, 'bucket_id')}/${validateStoragePath(params.path, 'path')}`,
         config,
-        { method: 'POST', body: { expiresIn: parseInt(params.expires_in as string, 10) } }
+        { method: 'POST', body: { expiresIn } }
       );
     },
   },

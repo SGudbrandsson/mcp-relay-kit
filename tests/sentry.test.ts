@@ -197,5 +197,14 @@ describe('Sentry adapter', () => {
         })
       );
     });
+
+    it('filters out unknown fields from request body', async () => {
+      mockFetch.mockResolvedValueOnce(mockSentryResponse({ id: '123' }));
+      await action.execute({ issue_id: '123', assignedTo: 'user@example.com', bogusField: 'should-not-appear' }, config);
+      const body = JSON.parse(mockFetch.mock.calls[0][1].body as string);
+      expect(body.assignedTo).toBe('user@example.com');
+      expect(body).not.toHaveProperty('bogusField');
+      expect(body).not.toHaveProperty('issue_id');
+    });
   });
 });

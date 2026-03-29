@@ -27,7 +27,9 @@ async function cloudflareFetch(
   const token = config.token as string | undefined;
   if (!token) throw new Error('Cloudflare token not configured');
 
-  const res = await fetch(`${DEFAULT_BASE_URL}${path}`, {
+  const baseUrl = (config.baseUrl as string) || DEFAULT_BASE_URL;
+
+  const res = await fetch(`${baseUrl}${path}`, {
     method: options.method ?? 'GET',
     headers: {
       Authorization: `Bearer ${token}`,
@@ -48,13 +50,13 @@ async function cloudflareFetch(
 function requireZoneId(config: Record<string, unknown>): string {
   const zoneId = config.zone_id as string | undefined;
   if (!zoneId) throw new Error('Cloudflare zone_id not configured');
-  return zoneId;
+  return validatePathSegment(zoneId, 'zone_id');
 }
 
 function requireAccountId(config: Record<string, unknown>): string {
   const accountId = config.account_id as string | undefined;
   if (!accountId) throw new Error('Cloudflare account_id not configured');
-  return accountId;
+  return validatePathSegment(accountId, 'account_id');
 }
 
 const actions: ServiceAction[] = [
@@ -107,8 +109,16 @@ const actions: ServiceAction[] = [
         content: params.content,
       };
       if (params.proxied !== undefined) body.proxied = params.proxied === 'true';
-      if (params.ttl) body.ttl = parseInt(params.ttl as string, 10);
-      if (params.priority) body.priority = parseInt(params.priority as string, 10);
+      if (params.ttl) {
+        const ttl = parseInt(params.ttl as string, 10);
+        if (isNaN(ttl)) throw new Error('ttl must be a number');
+        body.ttl = ttl;
+      }
+      if (params.priority) {
+        const priority = parseInt(params.priority as string, 10);
+        if (isNaN(priority)) throw new Error('priority must be a number');
+        body.priority = priority;
+      }
       return cloudflareFetch(`/zones/${zoneId}/dns_records`, config, { method: 'POST', body });
     },
   },
@@ -131,7 +141,11 @@ const actions: ServiceAction[] = [
       if (rest.name) body.name = rest.name;
       if (rest.content) body.content = rest.content;
       if (rest.proxied !== undefined) body.proxied = rest.proxied === 'true';
-      if (rest.ttl) body.ttl = parseInt(rest.ttl as string, 10);
+      if (rest.ttl) {
+        const ttl = parseInt(rest.ttl as string, 10);
+        if (isNaN(ttl)) throw new Error('ttl must be a number');
+        body.ttl = ttl;
+      }
       return cloudflareFetch(`/zones/${zoneId}/dns_records/${validatePathSegment(record_id, 'record_id')}`, config, { method: 'PATCH', body });
     },
   },

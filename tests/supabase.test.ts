@@ -84,7 +84,7 @@ describe('Supabase adapter', () => {
   describe('run_sql', () => {
     const action = supabaseAdapter.actions.find((a) => a.name === 'run_sql')!;
 
-    it('executes SQL via Management API', async () => {
+    it('executes SQL via Management API with read_only defaulting to true', async () => {
       mockFetch.mockResolvedValueOnce(mockSupabaseResponse([{ id: 1 }]));
       await action.execute({ query: 'SELECT 1' }, config);
       const [url, opts] = mockFetch.mock.calls[0];
@@ -92,6 +92,7 @@ describe('Supabase adapter', () => {
       expect(opts.method).toBe('POST');
       const body = JSON.parse(opts.body as string);
       expect(body.query).toBe('SELECT 1');
+      expect(body.read_only).toBe(true);
     });
 
     it('passes read_only flag', async () => {
@@ -99,6 +100,13 @@ describe('Supabase adapter', () => {
       await action.execute({ query: 'SELECT 1', read_only: 'true' }, config);
       const body = JSON.parse(mockFetch.mock.calls[0][1].body as string);
       expect(body.read_only).toBe(true);
+    });
+
+    it('sets read_only to false when passed "false"', async () => {
+      mockFetch.mockResolvedValueOnce(mockSupabaseResponse([]));
+      await action.execute({ query: 'INSERT INTO t VALUES (1)', read_only: 'false' }, config);
+      const body = JSON.parse(mockFetch.mock.calls[0][1].body as string);
+      expect(body.read_only).toBe(false);
     });
 
     it('throws on missing project_ref', async () => {
@@ -145,6 +153,10 @@ describe('Supabase adapter', () => {
 
   describe('create_user', () => {
     const action = supabaseAdapter.actions.find((a) => a.name === 'create_user')!;
+
+    it('throws on invalid JSON user_metadata', async () => {
+      await expect(action.execute({ email: 'a@b.com', user_metadata: 'not-json' }, config)).rejects.toThrow('user_metadata must be valid JSON');
+    });
 
     it('creates a user', async () => {
       mockFetch.mockResolvedValueOnce(mockSupabaseResponse({ id: 'u-new' }));
@@ -223,6 +235,10 @@ describe('Supabase adapter', () => {
     it('rejects path with traversal sequences', async () => {
       await expect(action.execute({ bucket_id: 'photos', path: '../../etc/passwd', expires_in: '3600' }, config)).rejects.toThrow('Invalid path');
     });
+
+    it('throws on non-numeric expires_in', async () => {
+      await expect(action.execute({ bucket_id: 'photos', path: 'photo.jpg', expires_in: 'abc' }, config)).rejects.toThrow('expires_in must be a number');
+    });
   });
 
   describe('upload_file', () => {
@@ -261,6 +277,10 @@ describe('Supabase adapter', () => {
 
   describe('invoke_function', () => {
     const action = supabaseAdapter.actions.find((a) => a.name === 'invoke_function')!;
+
+    it('throws on invalid JSON body', async () => {
+      await expect(action.execute({ function_slug: 'hello', body: 'not-json' }, config)).rejects.toThrow('body must be valid JSON');
+    });
 
     it('invokes an edge function via Project API', async () => {
       mockFetch.mockResolvedValueOnce(mockSupabaseResponse({ result: 'ok' }));

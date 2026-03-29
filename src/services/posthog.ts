@@ -30,8 +30,9 @@ async function posthogFetch(
   const baseUrl = (config.baseUrl as string) || DEFAULT_BASE_URL;
   const projectId = config.project_id as string;
   if (!projectId) throw new Error('PostHog project_id not configured');
+  const safeProjectId = validatePathSegment(projectId, 'project_id');
 
-  const res = await fetch(`${baseUrl}/api/projects/${projectId}${path}`, {
+  const res = await fetch(`${baseUrl}/api/projects/${safeProjectId}${path}`, {
     method: options.method ?? 'GET',
     headers: {
       Authorization: `Bearer ${token}`,

@@ -164,7 +164,15 @@ describe('Vercel adapter', () => {
       expect(opts.method).toBe('POST');
       const body = JSON.parse(opts.body as string);
       expect(body.key).toBe('API_KEY');
-      expect(body.target).toBe('production');
+      expect(body.target).toEqual(['production']);
+    });
+
+    it('splits comma-separated target into array', async () => {
+      mockFetch.mockResolvedValueOnce(mockVercelResponse({ key: 'API_KEY' }));
+      await action.execute({ project_id: 'proj-1', key: 'API_KEY', value: 'secret', target: 'production,preview' }, config);
+      const [, opts] = mockFetch.mock.calls[0];
+      const body = JSON.parse(opts.body as string);
+      expect(body.target).toEqual(['production', 'preview']);
     });
   });
 

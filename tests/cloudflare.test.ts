@@ -94,6 +94,13 @@ describe('Cloudflare adapter', () => {
       mockFetch.mockResolvedValueOnce(mockCloudflareError(403, 'Forbidden'));
       await expect(action.execute({}, config)).rejects.toThrow('Cloudflare API 403');
     });
+
+    it('uses custom baseUrl when configured', async () => {
+      mockFetch.mockResolvedValueOnce(mockCloudflareResponse([]));
+      await action.execute({}, { ...config, baseUrl: 'https://cf.example.com/v4' });
+      const url = mockFetch.mock.calls[0][0] as string;
+      expect(url.startsWith('https://cf.example.com/v4')).toBe(true);
+    });
   });
 
   describe('get_dns_record', () => {
@@ -125,6 +132,10 @@ describe('Cloudflare adapter', () => {
           body: expect.stringContaining('"type":"A"'),
         })
       );
+    });
+
+    it('throws on non-numeric ttl', async () => {
+      await expect(action.execute({ type: 'A', name: 'test.example.com', content: '1.2.3.4', ttl: 'abc' }, config)).rejects.toThrow('ttl must be a number');
     });
   });
 
@@ -219,6 +230,10 @@ describe('Cloudflare adapter', () => {
   describe('create_access_policy', () => {
     const action = cloudflareAdapter.actions.find((a) => a.name === 'create_access_policy')!;
 
+    it('throws on invalid JSON include', async () => {
+      await expect(action.execute({ app_id: 'a', name: 'n', decision: 'allow', include: 'not-json' }, config)).rejects.toThrow('include must be valid JSON');
+    });
+
     it('creates an access policy with JSON include', async () => {
       mockFetch.mockResolvedValueOnce(mockCloudflareResponse({ id: 'pol-new' }));
       const include = JSON.stringify([{ email: { email: 'user@example.com' } }]);
@@ -308,6 +323,10 @@ describe('Cloudflare adapter', () => {
 
   describe('update_tunnel_config', () => {
     const action = cloudflareAdapter.actions.find((a) => a.name === 'update_tunnel_config')!;
+
+    it('throws on invalid JSON config', async () => {
+      await expect(action.execute({ tunnel_id: 'tun-1', config: 'not-json' }, config)).rejects.toThrow('config must be valid JSON');
+    });
 
     it('updates tunnel config with ingress rules', async () => {
       mockFetch.mockResolvedValueOnce(mockCloudflareResponse({ tunnel_id: 'tun-1' }));

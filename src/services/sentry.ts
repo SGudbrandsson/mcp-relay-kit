@@ -134,10 +134,13 @@ const actions: ServiceAction[] = [
       priority: { type: 'string', description: 'Issue priority', required: false },
     },
     execute: async (params, config) => {
-      const { issue_id, ...data } = params;
-      return sentryFetch(`/issues/${validatePathSegment(issue_id, 'issue_id')}/`, config, {
+      const body: Record<string, unknown> = {};
+      if (params.assignedTo) body.assignedTo = params.assignedTo;
+      if (params.status) body.status = params.status;
+      if (params.priority) body.priority = params.priority;
+      return sentryFetch(`/issues/${validatePathSegment(params.issue_id, 'issue_id')}/`, config, {
         method: 'PUT',
-        body: data,
+        body,
       });
     },
   },
