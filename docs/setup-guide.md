@@ -1,6 +1,18 @@
-# MCP Gateway Setup Guide
+# Codemode Gateway Setup Guide
 
-This guide explains how to configure and connect the MCP gateway to your AI coding tool.
+This guide explains how to configure and connect the gateway to your AI coding tool.
+
+## Quick Setup
+
+Run the interactive installer:
+
+```bash
+npx codemode-gateway --setup
+```
+
+This walks you through service selection, credentials, and AI tool configuration. For manual setup, continue reading below.
+
+---
 
 ## 1. Create a Gateway Config
 

@@ -18,6 +18,21 @@ Claude Code session (any project)
 
 The gateway acts as a thin dispatcher — no sandbox, no V8 isolates, no heavy infrastructure. Each service is a module with a few focused actions.
 
+## Interactive Setup
+
+Run the setup wizard to configure services and connect your AI tool:
+
+```bash
+npx codemode-gateway --setup
+```
+
+The wizard will:
+1. Let you choose which services to configure
+2. Walk through credentials for each service (supports env var references or direct values)
+3. Optionally configure your AI tool (Claude Code, Gemini CLI, Cursor, Windsurf, Codex)
+
+For manual configuration, see below.
+
 ## Quick Start
 
 ### 1. Install dependencies
