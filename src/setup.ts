@@ -6,6 +6,7 @@
  */
 
 import * as fs from 'node:fs';
+import * as os from 'node:os';
 import * as path from 'node:path';
 import * as readline from 'node:readline';
 import { fileURLToPath } from 'node:url';
@@ -53,7 +54,11 @@ interface AiTool {
 
 /** Determine whether user input is an env var reference or a literal value. */
 export function resolveValue(input: string): string {
-  if (input.startsWith('$')) return `\${${input.slice(1)}}`;
+  if (input.startsWith('$')) {
+    const name = input.slice(1);
+    if (!name) return input;
+    return `\${${name}}`;
+  }
   if (/^[A-Z][A-Z0-9_]*$/.test(input)) return `\${${input}}`;
   return input;
 }
@@ -294,8 +299,7 @@ async function writeConfigFile(
 ): Promise<string> {
   printHeader('Write Gateway Config');
 
-  const home = process.env['HOME'] || process.env['USERPROFILE'] || '~';
-  const defaultPath = path.join(home, '.config', 'codemode-gateway', 'config.json');
+  const defaultPath = path.join(os.homedir(), '.config', 'codemode-gateway', 'config.json');
   const pathInput = await ask(`Config file path [${defaultPath}]: `);
   const configPath = pathInput || defaultPath;
 
@@ -322,7 +326,7 @@ async function writeConfigFile(
 // ── AI tool detection and MCP config ──
 
 function getAiTools(): AiTool[] {
-  const home = process.env['HOME'] || process.env['USERPROFILE'] || '';
+  const home = os.homedir();
   const cwd = process.cwd();
 
   return [
@@ -376,7 +380,10 @@ function getAiTools(): AiTool[] {
 
 function getServerPath(): string {
   const thisFile = fileURLToPath(import.meta.url);
-  return path.resolve(path.dirname(thisFile), 'server.js');
+  const thisDir = path.dirname(thisFile);
+  // When running from source (src/), point to dist/server.js for the MCP config
+  const projectRoot = path.resolve(thisDir, '..');
+  return path.join(projectRoot, 'dist', 'server.js');
 }
 
 function buildMcpEntry(configPath: string): McpServerEntry {

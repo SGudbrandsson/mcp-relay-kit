@@ -20,6 +20,9 @@ describe('resolveValue', () => {
   it('wraps UPPER_123 with digits as env var', () => {
     expect(resolveValue('API_KEY_V2')).toBe('${API_KEY_V2}');
   });
+  it('treats bare $ as literal', () => {
+    expect(resolveValue('$')).toBe('$');
+  });
 });
 
 describe('generateBackupPath', () => {
