@@ -263,6 +263,38 @@ export const availableAdapters: Record<string, ServiceAdapter> = {
 
 That's it — the gateway auto-registers any service that appears in both the adapter registry and the config file.
 
+## Multiple Instances of the Same Service
+
+You can register the same service multiple times with different configurations using `service:label` syntax in your config keys:
+
+```json
+{
+  "services": {
+    "sentry:production": {
+      "token": "${SENTRY_PROD_TOKEN}",
+      "organization": "my-org",
+      "project": "prod-backend"
+    },
+    "sentry:staging": {
+      "token": "${SENTRY_STAGING_TOKEN}",
+      "organization": "my-org",
+      "project": "staging-backend"
+    },
+    "supabase": {
+      "token": "${SUPABASE_TOKEN}",
+      "service_role_key": "${SUPABASE_SERVICE_ROLE_KEY}",
+      "project_ref": "abcdefghij"
+    }
+  }
+}
+```
+
+- Use `service:label` to create named instances (e.g. `"sentry:production"`, `"supabase:app-db"`)
+- Plain keys like `"supabase"` still work for single instances
+- Each instance gets its own config and appears separately in search results
+- Use the full instance name when calling execute: `execute("sentry:production", "list_issues", "{}")`
+- Search matches against both the service type and the label, so searching "production" finds all production instances
+
 ## Per-Project Configuration
 
 Different projects can use different configs pointing to different services:

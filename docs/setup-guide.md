@@ -23,6 +23,27 @@ Create a JSON file with your service credentials:
 
 Save this as `~/.config/mcp-gateway/config.json` (or any path you prefer).
 
+**Multiple instances:** To connect to the same service multiple times (e.g. production and staging Sentry), use `service:label` keys:
+
+```json
+{
+  "services": {
+    "sentry:production": {
+      "token": "${SENTRY_PROD_TOKEN}",
+      "organization": "my-org",
+      "project": "prod-backend"
+    },
+    "sentry:staging": {
+      "token": "${SENTRY_STAGING_TOKEN}",
+      "organization": "my-org",
+      "project": "staging-backend"
+    }
+  }
+}
+```
+
+Each instance appears separately in search results and is called by its full name: `execute("sentry:production", "list_issues", "{}")`. Plain keys without a label (e.g. `"sentry"`) still work for single instances.
+
 **Environment variable interpolation:** Values like `${SENTRY_AUTH_TOKEN}` are resolved from your shell environment at startup. Set them in your shell profile:
 
 ```bash

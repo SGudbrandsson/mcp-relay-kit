@@ -18,15 +18,18 @@ import { availableAdapters } from './services/index.js';
 
 const registry = new ServiceRegistry();
 
-// Load config and register matching adapters
+// Load config and register matching adapters.
+// Config keys can be plain ("sentry") or labeled ("sentry:production").
+// Labeled keys register the same adapter under a unique instance name.
 const config = loadConfig();
-for (const [serviceName, serviceConfig] of Object.entries(config.services)) {
-  const adapter = availableAdapters[serviceName];
+for (const [configKey, serviceConfig] of Object.entries(config.services)) {
+  const adapterName = configKey.includes(':') ? configKey.split(':')[0] : configKey;
+  const adapter = availableAdapters[adapterName];
   if (adapter) {
-    registry.register(adapter, serviceConfig);
-    console.error(`[mcp-gateway] Registered service: ${serviceName}`);
+    registry.register(adapter, serviceConfig, configKey);
+    console.error(`[mcp-gateway] Registered service: ${configKey}`);
   } else {
-    console.error(`[mcp-gateway] Unknown service in config: ${serviceName} (available: ${Object.keys(availableAdapters).join(', ')})`);
+    console.error(`[mcp-gateway] Unknown service in config: ${configKey} (available: ${Object.keys(availableAdapters).join(', ')})`);
   }
 }
 

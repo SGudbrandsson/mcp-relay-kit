@@ -106,7 +106,7 @@ export const availableAdapters: Record<string, ServiceAdapter> = {
 };
 ```
 
-The server auto-registers adapters when their name appears in the gateway config.
+The server auto-registers adapters when their name appears in the gateway config. Multiple instances of the same adapter can be registered using `service:label` config keys (e.g. `"example:production"` and `"example:staging"`) — no adapter code changes needed.
 
 ## Step 3: Add Configuration
 

@@ -9,6 +9,11 @@
       "organization": "YOUR_ORG_SLUG",
       "project": "YOUR_PROJECT_SLUG"
     },
+    "sentry:staging": {
+      "token": "${SENTRY_STAGING_TOKEN}",
+      "organization": "YOUR_ORG_SLUG",
+      "project": "YOUR_STAGING_PROJECT_SLUG"
+    },
     "linear": {
       "token": "${LINEAR_API_KEY}"
     },

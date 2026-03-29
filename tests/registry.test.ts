@@ -137,6 +137,63 @@ describe('ServiceRegistry', () => {
     });
   });
 
+  describe('multi-instance', () => {
+    it('registers the same adapter under different instance names', () => {
+      const adapter = mockAdapter('sentry', ['list_issues']);
+      registry.register(adapter, { token: 'prod-token', org: 'prod' }, 'sentry:production');
+      registry.register(adapter, { token: 'stg-token', org: 'staging' }, 'sentry:staging');
+      expect(registry.serviceNames).toEqual(['sentry:production', 'sentry:staging']);
+      expect(registry.has('sentry:production')).toBe(true);
+      expect(registry.has('sentry:staging')).toBe(true);
+      expect(registry.has('sentry')).toBe(false);
+    });
+
+    it('search returns instance names, not adapter names', () => {
+      const adapter = mockAdapter('sentry', ['list_issues']);
+      registry.register(adapter, {}, 'sentry:production');
+      registry.register(adapter, {}, 'sentry:staging');
+      const results = registry.search('sentry');
+      expect(results).toHaveLength(2);
+      expect(results.map((r) => r.service)).toEqual(['sentry:production', 'sentry:staging']);
+    });
+
+    it('search matches on instance label', () => {
+      const adapter = mockAdapter('sentry', ['list_issues']);
+      registry.register(adapter, {}, 'sentry:production');
+      registry.register(adapter, {}, 'sentry:staging');
+      const results = registry.search('staging');
+      expect(results).toHaveLength(1);
+      expect(results[0].service).toBe('sentry:staging');
+    });
+
+    it('execute uses the correct config for each instance', async () => {
+      const adapter: ServiceAdapter = {
+        name: 'sentry',
+        description: 'Mock sentry',
+        actions: [{
+          name: 'get_org',
+          description: 'Returns the org from config',
+          params: {},
+          execute: async (_params, config) => ({ org: config.org }),
+        }],
+      };
+      registry.register(adapter, { org: 'prod-org' }, 'sentry:production');
+      registry.register(adapter, { org: 'staging-org' }, 'sentry:staging');
+
+      const prod = await registry.execute('sentry:production', 'get_org', {});
+      expect(prod.data).toEqual({ org: 'prod-org' });
+
+      const stg = await registry.execute('sentry:staging', 'get_org', {});
+      expect(stg.data).toEqual({ org: 'staging-org' });
+    });
+
+    it('plain name still works when no instance name provided', () => {
+      registry.register(mockAdapter('asana', ['get_task']), { token: 'test' });
+      expect(registry.has('asana')).toBe(true);
+      expect(registry.serviceNames).toEqual(['asana']);
+    });
+  });
+
   describe('listAll', () => {
     it('returns empty array when no services registered', () => {
       expect(registry.listAll()).toEqual([]);

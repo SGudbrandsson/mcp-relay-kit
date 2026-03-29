@@ -15,18 +15,24 @@ export class ServiceRegistry {
   private adapters = new Map<string, ServiceAdapter>();
   private configs = new Map<string, ServiceConfig>();
 
-  /** Register a service adapter with its project-specific config */
-  register(adapter: ServiceAdapter, config: ServiceConfig): void {
-    this.adapters.set(adapter.name, adapter);
-    this.configs.set(adapter.name, config);
+  /**
+   * Register a service adapter with its project-specific config.
+   * @param instanceName — override the adapter's default name (e.g. "sentry:production").
+   *   When provided, this name is used as the registry key so the same adapter type
+   *   can be registered multiple times with different configs.
+   */
+  register(adapter: ServiceAdapter, config: ServiceConfig, instanceName?: string): void {
+    const name = instanceName ?? adapter.name;
+    this.adapters.set(name, adapter);
+    this.configs.set(name, config);
   }
 
   /** List all registered services and their actions */
   listAll(): SearchResult[] {
     const results: SearchResult[] = [];
-    for (const [, adapter] of this.adapters) {
+    for (const [instanceName, adapter] of this.adapters) {
       for (const action of adapter.actions) {
-        results.push(formatResult(adapter.name, action));
+        results.push(formatResult(instanceName, action));
       }
     }
     return results;
@@ -42,15 +48,15 @@ export class ServiceRegistry {
 
     const scored: { result: SearchResult; score: number }[] = [];
 
-    for (const [, adapter] of this.adapters) {
+    for (const [instanceName, adapter] of this.adapters) {
       for (const action of adapter.actions) {
-        const haystack = `${adapter.name} ${action.name} ${action.description}`.toLowerCase();
+        const haystack = `${instanceName} ${adapter.name} ${action.name} ${action.description}`.toLowerCase();
         let score = 0;
         for (const term of terms) {
           if (haystack.includes(term)) score++;
         }
         if (score > 0) {
-          scored.push({ result: formatResult(adapter.name, action), score });
+          scored.push({ result: formatResult(instanceName, action), score });
         }
       }
     }
@@ -61,7 +67,7 @@ export class ServiceRegistry {
 
   /**
    * Execute a service action.
-   * @param service - Service name (e.g., "asana")
+   * @param service - Service or instance name (e.g., "asana" or "sentry:production")
    * @param action - Action name (e.g., "post_comment")
    * @param params - Action parameters
    */
