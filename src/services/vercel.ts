@@ -296,6 +296,44 @@ const actions: ServiceAction[] = [
       );
     },
   },
+  {
+    name: 'get_runtime_logs',
+    description: 'Get runtime logs for a Vercel deployment (serverless, edge functions, middleware)',
+    params: {
+      project_id: { type: 'string', description: 'Project ID', required: true },
+      deployment_id: { type: 'string', description: 'Deployment ID', required: true },
+    },
+    execute: async (params, config) => {
+      const token = config.token as string | undefined;
+      if (!token) throw new Error('Vercel token not configured');
+
+      const projId = validatePathSegment(params.project_id, 'project_id');
+      const deplId = validatePathSegment(params.deployment_id, 'deployment_id');
+      const url = new URL(`${DEFAULT_BASE_URL}/v1/projects/${projId}/deployments/${deplId}/runtime-logs`);
+      const teamId = config.team_id as string | undefined;
+      if (teamId) url.searchParams.set('teamId', teamId);
+
+      const res = await fetch(url.toString(), {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(`Vercel API ${res.status}: ${text}`);
+      }
+
+      // Response is application/stream+json (newline-delimited JSON)
+      const text = await res.text();
+      const logs = text
+        .split('\n')
+        .filter((line) => line.trim())
+        .map((line) => JSON.parse(line));
+      return logs;
+    },
+  },
+
   // --- Domains ---
   {
     name: 'list_domains',

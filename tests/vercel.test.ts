@@ -49,10 +49,11 @@ describe('Vercel adapter', () => {
     expect(names).toContain('update_env_var');
     expect(names).toContain('delete_env_var');
     expect(names).toContain('get_deployment_events');
+    expect(names).toContain('get_runtime_logs');
     expect(names).toContain('list_domains');
     expect(names).toContain('add_domain');
     expect(names).toContain('remove_domain');
-    expect(names.length).toBe(19);
+    expect(names.length).toBe(20);
   });
 
   describe('list_deployments', () => {
@@ -232,6 +233,39 @@ describe('Vercel adapter', () => {
 
     it('rejects deployment_id with path traversal', async () => {
       await expect(action.execute({ deployment_id: '../bad' }, config)).rejects.toThrow('Invalid deployment_id');
+    });
+  });
+
+  describe('get_runtime_logs', () => {
+    const action = vercelAdapter.actions.find((a) => a.name === 'get_runtime_logs')!;
+
+    it('fetches runtime logs and parses NDJSON response', async () => {
+      const ndjson = [
+        JSON.stringify({ source: 'serverless', message: 'GET /api/hello', level: 'info', rowId: '1', timestampInMs: 1690000000000, domain: 'app.vercel.app', messageTruncated: false, requestMethod: 'GET', requestPath: '/api/hello', responseStatusCode: 200 }),
+        JSON.stringify({ source: 'edge-function', message: 'Processing', level: 'info', rowId: '2', timestampInMs: 1690000001000, domain: 'app.vercel.app', messageTruncated: false, requestMethod: 'POST', requestPath: '/api/process', responseStatusCode: 200 }),
+      ].join('\n');
+      mockFetch.mockResolvedValueOnce({ ok: true, text: async () => ndjson });
+      const result = await action.execute({ project_id: 'proj-1', deployment_id: 'd1' }, config);
+      expect(result).toHaveLength(2);
+      expect((result as any[])[0].source).toBe('serverless');
+      expect((result as any[])[1].source).toBe('edge-function');
+      const url = mockFetch.mock.calls[0][0] as string;
+      expect(url).toContain('/v1/projects/proj-1/deployments/d1/runtime-logs');
+      expect(url).toContain('teamId=team-abc');
+    });
+
+    it('rejects deployment_id with path traversal', async () => {
+      await expect(action.execute({ project_id: 'proj-1', deployment_id: '../bad' }, config)).rejects.toThrow('Invalid deployment_id');
+    });
+
+    it('rejects project_id with path traversal', async () => {
+      await expect(action.execute({ project_id: '../bad', deployment_id: 'd1' }, config)).rejects.toThrow('Invalid project_id');
+    });
+
+    it('handles empty log stream', async () => {
+      mockFetch.mockResolvedValueOnce({ ok: true, text: async () => '' });
+      const result = await action.execute({ project_id: 'proj-1', deployment_id: 'd1' }, config);
+      expect(result).toEqual([]);
     });
   });
 
