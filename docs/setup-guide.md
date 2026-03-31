@@ -10,7 +10,7 @@ Run the interactive installer:
 npx mcp-relay-kit --setup
 ```
 
-This walks you through service selection, credentials, and AI tool configuration. For manual setup, continue reading below.
+This walks you through service selection, credentials, MCP server proxying, and AI tool configuration. For manual setup, continue reading below.
 
 ---
 
@@ -63,7 +63,41 @@ export SENTRY_AUTH_TOKEN="sntrys_..."
 export LINEAR_API_KEY="lin_api_..."
 ```
 
-Only include services you use — the gateway ignores unconfigured adapters.
+Only include services you use — the relay ignores unconfigured adapters.
+
+## 1b. Proxy External MCP Servers (Optional)
+
+In addition to built-in service adapters, you can proxy any MCP server through the relay. Add a `mcpServers` key alongside `services` in your config:
+
+```json
+{
+  "services": {
+    "sentry": {
+      "token": "${SENTRY_AUTH_TOKEN}",
+      "organization": "my-org",
+      "project": "my-project"
+    }
+  },
+  "mcpServers": {
+    "github": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "env": { "GITHUB_TOKEN": "${GITHUB_TOKEN}" }
+    },
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/home/user/projects"]
+    }
+  }
+}
+```
+
+- `command`, `args`, `env` follow the standard MCP server config format
+- `env` values support `${VAR}` interpolation from your shell environment
+- The relay spawns each listed server as a child process, discovers its tools, and makes them available via `search` and `execute`
+- If a name in `mcpServers` collides with a built-in adapter name in `services`, the built-in adapter wins
+
+The setup wizard (`npx mcp-relay-kit --setup`) also supports adding MCP servers interactively.
 
 ## 2. Configure Your AI Tool
 

@@ -1,8 +1,8 @@
 # mcp-relay-kit
 
-Lightweight MCP server that exposes multiple services through just 2 tools: **search** and **execute**.
+Lightweight MCP relay that exposes multiple services — and any number of proxied MCP servers — through just 2 tools: **search** and **execute**.
 
-Instead of loading 44+ Asana tools (25,000-60,000 tokens) or dozens of Slack/Sentry tools into every AI session, the gateway provides a single entry point at ~2,000 tokens of context overhead — regardless of how many services are configured.
+Instead of loading 44+ Asana tools (25,000-60,000 tokens) or dozens of Slack/Sentry tools into every AI session, the relay provides a single entry point at ~2,000 tokens of context overhead — regardless of how many services or proxied MCP servers are configured.
 
 ## Architecture
 
@@ -14,9 +14,15 @@ Claude Code session (any project)
     │
     └─ execute("asana", "post_comment", {"task_id": "123", "text": "Done"})
         → calls Asana API, returns result
+
+    ├─ search("create github issue")
+    │   → returns: github.create_issue schema + params  (proxied MCP server)
+    │
+    └─ execute("github", "create_issue", {"title": "Bug", "body": "..."})
+        → forwarded to proxied GitHub MCP server, returns result
 ```
 
-The gateway acts as a thin dispatcher — no sandbox, no V8 isolates, no heavy infrastructure. Each service is a module with a few focused actions.
+The relay acts as a thin dispatcher — no sandbox, no V8 isolates, no heavy infrastructure. Built-in service adapters and proxied MCP servers coexist behind the same two tools.
 
 ## Interactive Setup
 
@@ -97,9 +103,35 @@ Or after building:
 npm run build
 ```
 
+## Proxying MCP Servers
+
+You can proxy any MCP server through the relay, collapsing its tools into the same search+execute interface:
+
+```json
+{
+  "services": {
+    "asana": { "token": "..." }
+  },
+  "mcpServers": {
+    "github": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "env": { "GITHUB_TOKEN": "ghp_..." }
+    }
+  }
+}
+```
+
+The relay spawns each MCP server as a child process, discovers its tools, and exposes them through `search` and `execute`. A server with 20+ tools still costs only ~2,000 tokens of context.
+
+- `command`, `args`, `env` use the standard MCP server config format
+- `env` values support `${VAR}` interpolation
+- Built-in adapters (in `services`) and proxied servers (in `mcpServers`) coexist
+- If a name in `mcpServers` collides with one in `services`, the built-in adapter wins
+
 ## Tools
 
-The gateway exposes exactly 2 MCP tools:
+The relay exposes exactly 2 MCP tools:
 
 ### `search(query)`
 
