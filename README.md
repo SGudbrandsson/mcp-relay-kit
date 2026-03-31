@@ -1,51 +1,45 @@
 # mcp-relay-kit
 
-Lightweight MCP relay that exposes multiple services — and any number of proxied MCP servers — through just 2 tools: **search** and **execute**.
+**Connect all your dev tools to AI — without blowing up your context window.**
 
-Instead of loading 44+ Asana tools (25,000-60,000 tokens) or dozens of Slack/Sentry tools into every AI session, the relay provides a single entry point at ~2,000 tokens of context overhead — regardless of how many services or proxied MCP servers are configured.
+Every MCP server you add dumps its full tool list into your AI's context. The official Asana MCP alone uses 25,000+ tokens. Add Sentry, GitHub, Slack, and PostHog, and you've burned 100k+ tokens before the conversation even starts.
 
-## Architecture
+MCP Relay Kit fixes this. It sits between your AI tool and your services, exposing everything through just **2 tools** — `search` and `execute` — at a fixed cost of ~2,000 tokens. Add 5 services or 50; the context cost stays the same.
+
+### How it works
 
 ```
-Claude Code session (any project)
+Your AI tool
     │
     ├─ search("post comment to asana")
     │   → returns: asana.post_comment schema + params
     │
     └─ execute("asana", "post_comment", {"task_id": "123", "text": "Done"})
         → calls Asana API, returns result
-
-    ├─ search("create github issue")
-    │   → returns: github.create_issue schema + params  (proxied MCP server)
-    │
-    └─ execute("github", "create_issue", {"title": "Bug", "body": "..."})
-        → forwarded to proxied GitHub MCP server, returns result
 ```
 
-The relay acts as a thin dispatcher — no sandbox, no V8 isolates, no heavy infrastructure. Built-in service adapters and proxied MCP servers coexist behind the same two tools.
+Your AI calls `search` to discover what's available, then `execute` to use it. That's it. Built-in service adapters and proxied MCP servers all work the same way.
 
-## Interactive Setup
+## Get started
 
-Run the setup wizard to configure services and connect your AI tool:
+The fastest way to set up is the interactive wizard:
 
 ```bash
 npx mcp-relay-kit --setup
 ```
 
-The wizard will:
-1. Let you choose which services to configure
-2. Walk through credentials for each service (supports env var references or direct values)
-3. Optionally configure your AI tool (Claude Code, Gemini CLI, Cursor, Windsurf, Codex)
+It walks you through picking services, entering credentials, and configuring your AI tool (Claude Code, Gemini CLI, Cursor, Windsurf, or Codex).
 
 For manual configuration, see below.
 
-## Quick Start
+## Manual setup
 
-### 1. Install dependencies
+### 1. Clone and build
 
 ```bash
-cd ~/sources/mcp-relay-kit
-npm install
+git clone https://github.com/SGudbrandsson/mcp-relay-kit.git
+cd mcp-relay-kit
+npm install && npm run build
 ```
 
 ### 2. Create a config file
@@ -56,56 +50,43 @@ npm install
     "asana": {
       "token": "${ASANA_TOKEN}",
       "workspace": "your-workspace-gid"
+    },
+    "sentry": {
+      "token": "${SENTRY_AUTH_TOKEN}",
+      "organization": "your-org",
+      "project": "your-project"
     }
   }
 }
 ```
 
-Save as e.g. `~/.config/mcp-relay-kit/keeps.json`.
+Save this as `~/.config/mcp-relay-kit/config.json` (or any path you prefer).
 
-Environment variables in `${VAR}` syntax are interpolated at load time.
+Values wrapped in `${VAR}` are resolved from environment variables at startup.
 
-### 3. Add to your project's `.mcp.json`
+### 3. Point your AI tool at the relay
 
-```json
-{
-  "mcpServers": {
-    "gateway": {
-      "command": "npx",
-      "args": ["tsx", "/home/siggi/sources/mcp-relay-kit/src/server.ts"],
-      "env": {
-        "GATEWAY_CONFIG": "/home/siggi/.config/mcp-relay-kit/keeps.json"
-      }
-    }
-  }
-}
-```
-
-Or after building:
+Add this to your project's `.mcp.json`:
 
 ```json
 {
   "mcpServers": {
-    "gateway": {
+    "relay": {
       "command": "node",
-      "args": ["/home/siggi/sources/mcp-relay-kit/dist/server.js"],
+      "args": ["/path/to/mcp-relay-kit/dist/server.js"],
       "env": {
-        "GATEWAY_CONFIG": "/home/siggi/.config/mcp-relay-kit/keeps.json"
+        "GATEWAY_CONFIG": "/path/to/your/config.json"
       }
     }
   }
 }
 ```
 
-### 4. Build (optional, for production)
+Replace the paths with your actual install location and config path.
 
-```bash
-npm run build
-```
+## Proxy any MCP server
 
-## Proxying MCP Servers
-
-You can proxy any MCP server through the relay, collapsing its tools into the same search+execute interface:
+Already using an MCP server for GitHub, Slack, or anything else? Add it to the relay instead of loading it directly — you get the same functionality with a fraction of the context cost.
 
 ```json
 {
@@ -122,12 +103,9 @@ You can proxy any MCP server through the relay, collapsing its tools into the sa
 }
 ```
 
-The relay spawns each MCP server as a child process, discovers its tools, and exposes them through `search` and `execute`. A server with 20+ tools still costs only ~2,000 tokens of context.
+The relay spawns each MCP server as a child process, discovers its tools at startup, and exposes them through the same `search` and `execute` interface. A server with 20+ tools still costs only ~2,000 tokens.
 
-- `command`, `args`, `env` use the standard MCP server config format
-- `env` values support `${VAR}` interpolation
-- Built-in adapters (in `services`) and proxied servers (in `mcpServers`) coexist
-- If a name in `mcpServers` collides with one in `services`, the built-in adapter wins
+The `mcpServers` format is the same one used by Claude Code, Cursor, and other AI tools — so you can often just move an existing entry from your `.mcp.json` into the relay config.
 
 ## Tools
 
@@ -163,7 +141,7 @@ execute("asana", "post_comment", '{"task_id": "123", "text": "PR merged"}')
 → { success: true, data: { gid: "456", text: "PR merged" } }
 ```
 
-## Available Services
+## Built-in services
 
 ### Asana
 
@@ -256,7 +234,7 @@ Product analytics — query events, persons, session recordings, and insights.
 }
 ```
 
-## Adding a New Service
+## Add your own service
 
 1. Create `src/services/your-service.ts`:
 
@@ -308,7 +286,7 @@ export const availableAdapters: Record<string, ServiceAdapter> = {
 }
 ```
 
-That's it — the gateway auto-registers any service that appears in both the adapter registry and the config file.
+The relay auto-registers any service that appears in both the adapter registry and the config file.
 
 ## Multiple Instances of the Same Service
 
@@ -368,12 +346,12 @@ Tests include:
 - Unit tests for the Asana, Sentry, Linear, and PostHog adapters (mocked HTTP)
 - E2E test that starts the real MCP server process and communicates via stdio
 
-## Design Decisions
+## Why not just use multiple MCP servers directly?
 
-**Why not code-mode / sandbox?** Claude Code already runs arbitrary bash. A sandbox adds infrastructure complexity without security benefit in this context. The gateway is a thin dispatcher — the LLM calls `search` to discover what's available, then `execute` to call it. Same progressive discovery pattern, zero infrastructure overhead.
+**Context cost.** Each MCP server injects its full tool list into your AI's context window. One server with 20 tools might cost 15,000 tokens. Five servers and you've lost 75,000+ tokens of context to tool definitions alone — before your code, your conversation, or your files.
 
-**Why not one MCP per service?** Context cost. Each MCP server's tool definitions are injected into the LLM context. The official Asana MCP alone costs 25,000-60,000 tokens. The gateway collapses everything into 2 tools at ~2,000 tokens regardless of how many services are behind it.
+The relay collapses all of that into 2 tool definitions at ~2,000 tokens, no matter how many services sit behind it.
 
-**Why not skills?** Skills work great for 1-2 services. At 4+ services (Asana + Slack + Sentry + PostHog), maintaining separate skills gets unwieldy, and the agent needs to know which skill to invoke for which service. The gateway provides a single, consistent interface.
+**Discoverability.** With 5+ MCP servers loaded, your AI has 100+ tools to choose from. It often picks the wrong one or hallucinates parameters. With the relay, the AI searches first (`search("create issue")`), gets back the exact schema, then calls it. Fewer mistakes, less wasted context on retries.
 
-**Why JSON string for params?** MCP's tool schema uses Zod for parameter validation. `z.record(z.unknown())` isn't compatible with the MCP SDK's type system for tool inputs. A JSON string is the simplest workaround that keeps the gateway's tool count at exactly 2.
+**One config, one process.** Instead of managing 5 separate MCP server configs, you manage one relay config. One process to start, one place to add credentials, one thing to debug if something breaks.
