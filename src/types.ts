@@ -31,7 +31,15 @@ export interface ServiceConfig {
   [key: string]: unknown;
 }
 
+/** Configuration for a proxied MCP server */
+export interface McpServerConfig {
+  command: string;
+  args?: string[];
+  env?: Record<string, string>;
+}
+
 /** Top-level gateway configuration loaded from GATEWAY_CONFIG */
 export interface GatewayConfig {
   services: Record<string, ServiceConfig>;
+  mcpServers?: Record<string, McpServerConfig>;
 }

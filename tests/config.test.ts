@@ -73,4 +73,35 @@ describe('loadConfig', () => {
     const config = loadConfig();
     expect(config).toEqual({ services: {} });
   });
+
+  it('loads mcpServers config alongside services', () => {
+    writeFileSync(configPath, JSON.stringify({
+      services: {
+        asana: { token: 'my-token' },
+      },
+      mcpServers: {
+        github: {
+          command: 'npx',
+          args: ['-y', '@modelcontextprotocol/server-github'],
+          env: { GITHUB_TOKEN: '${TEST_TOKEN}' },
+        },
+      },
+    }));
+    process.env.GATEWAY_CONFIG = configPath;
+    process.env.TEST_TOKEN = 'ghp_test123';
+    const config = loadConfig();
+    expect(config.services.asana).toEqual({ token: 'my-token' });
+    expect(config.mcpServers).toBeDefined();
+    expect(config.mcpServers!.github.command).toBe('npx');
+    expect(config.mcpServers!.github.env!.GITHUB_TOKEN).toBe('ghp_test123');
+  });
+
+  it('returns undefined mcpServers when not present in config', () => {
+    writeFileSync(configPath, JSON.stringify({
+      services: { asana: { token: 'tok' } },
+    }));
+    process.env.GATEWAY_CONFIG = configPath;
+    const config = loadConfig();
+    expect(config.mcpServers).toBeUndefined();
+  });
 });
