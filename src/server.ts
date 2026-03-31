@@ -43,6 +43,34 @@ if (process.argv.includes('--setup')) {
     }
   }
 
+  const { startMcpProxy } = await import('./mcp-proxy.js');
+
+  // Register proxied MCP servers from config.mcpServers
+  const shutdowns: Array<() => void> = [];
+  for (const [name, serverConfig] of Object.entries(config.mcpServers ?? {})) {
+    if (registry.has(name)) {
+      console.error(`[mcp-relay-kit] Warning: "${name}" in mcpServers collides with a built-in service, skipping`);
+      continue;
+    }
+    try {
+      const { adapter, shutdown } = await startMcpProxy(name, serverConfig);
+      registry.register(adapter, {}, name);
+      shutdowns.push(shutdown);
+      console.error(`[mcp-relay-kit] Registered proxied MCP server: ${name} (${adapter.actions.length} tools)`);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error(`[mcp-relay-kit] Failed to start proxied MCP server "${name}": ${msg}`);
+    }
+  }
+
+  // Clean up child processes on exit
+  const cleanupAndExit = () => {
+    shutdowns.forEach((fn) => fn());
+    process.exit(0);
+  };
+  process.on('SIGTERM', cleanupAndExit);
+  process.on('SIGINT', cleanupAndExit);
+
   if (registry.serviceNames.length === 0) {
     console.error('[mcp-relay-kit] Warning: No services registered. Set GATEWAY_CONFIG to a config file path.');
   }
