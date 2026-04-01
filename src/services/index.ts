@@ -12,6 +12,7 @@ import { cloudflareAdapter } from './cloudflare.js';
 import { coolifyAdapter } from './coolify.js';
 import { vercelAdapter } from './vercel.js';
 import { supabaseAdapter } from './supabase.js';
+import { figmaAdapter } from './figma.js';
 
 /** All available adapters, keyed by service name */
 export const availableAdapters: Record<string, ServiceAdapter> = {
@@ -23,4 +24,5 @@ export const availableAdapters: Record<string, ServiceAdapter> = {
   coolify: coolifyAdapter,
   vercel: vercelAdapter,
   supabase: supabaseAdapter,
+  figma: figmaAdapter,
 };

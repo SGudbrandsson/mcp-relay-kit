@@ -4,15 +4,49 @@
   "description": "Lightweight MCP relay — exposes multiple services (Asana, Slack, Sentry, PostHog, etc.) as 2 tools: search + execute",
   "type": "module",
   "main": "dist/server.js",
+  "types": "dist/server.d.ts",
   "bin": {
     "mcp-relay-kit": "dist/server.js"
   },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "tsc",
     "dev": "tsx src/server.ts",
     "start": "node dist/server.js",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "prepublishOnly": "npm run build && npm test"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "relay",
+    "gateway",
+    "asana",
+    "sentry",
+    "posthog",
+    "linear",
+    "supabase",
+    "cloudflare",
+    "vercel",
+    "coolify",
+    "figma"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SGudbrandsson/mcp-relay-kit.git"
+  },
+  "homepage": "https://github.com/SGudbrandsson/mcp-relay-kit#readme",
+  "bugs": {
+    "url": "https://github.com/SGudbrandsson/mcp-relay-kit/issues"
+  },
+  "engines": {
+    "node": ">=18"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.1"

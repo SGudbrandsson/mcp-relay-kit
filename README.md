@@ -254,6 +254,33 @@ Product analytics — query events, persons, session recordings, and insights.
 }
 ```
 
+### Figma
+
+Design platform — inspect files, export images, manage comments, and browse team libraries.
+
+| Action | Description |
+|--------|-------------|
+| `get_file` | Get a Figma file by key (document structure, components, metadata) |
+| `get_file_nodes` | Get specific nodes from a file by their IDs |
+| `get_images` | Render nodes as images (PNG, JPG, SVG, or PDF) |
+| `get_comments` | Get comments on a file |
+| `post_comment` | Post a comment on a file (supports threaded replies) |
+| `get_file_components` | Get published components in a file |
+| `get_file_styles` | Get published styles in a file |
+| `get_team_projects` | List projects for a team |
+| `get_project_files` | List files in a project |
+| `get_team_components` | Get published components for a team library |
+| `get_team_styles` | Get published styles for a team library |
+| `get_file_versions` | Get version history of a file |
+
+**Config:**
+```json
+{
+  "token": "your-figma-personal-access-token",
+  "team_id": "your-team-id"
+}
+```
+
 ## Add your own service
 
 1. Create `src/services/your-service.ts`:
