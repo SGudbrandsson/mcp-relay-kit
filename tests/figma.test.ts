@@ -48,6 +48,7 @@ describe('Figma adapter', () => {
     expect(names).toContain('get_project_files');
     expect(names).toContain('get_team_components');
     expect(names).toContain('get_team_styles');
+    expect(names).toContain('get_image_fills');
     expect(names).toContain('get_file_versions');
   });
 
@@ -220,6 +221,25 @@ describe('Figma adapter', () => {
       expect(result).toEqual({ meta: { styles: [] } });
       const url = mockFetch.mock.calls[0][0] as string;
       expect(url).toContain('/files/abc/styles');
+    });
+  });
+
+  describe('get_image_fills', () => {
+    const action = findAction('get_image_fills');
+
+    it('fetches image fill URLs for a file', async () => {
+      const data = { meta: { images: { 'img1': 'https://s3.amazonaws.com/...' } } };
+      mockFetch.mockResolvedValueOnce(mockFigmaResponse(data));
+      const result = await action.execute({ file_key: 'abc' }, config);
+      expect(result).toEqual(data);
+      const url = mockFetch.mock.calls[0][0] as string;
+      expect(url).toContain('/files/abc/images');
+    });
+
+    it('rejects path traversal in file_key', async () => {
+      await expect(action.execute({ file_key: '../etc' }, config)).rejects.toThrow(
+        'Invalid file_key'
+      );
     });
   });
 

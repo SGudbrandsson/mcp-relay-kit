@@ -180,6 +180,18 @@ const actions: ServiceAction[] = [
     },
   },
   {
+    name: 'get_image_fills',
+    description:
+      'Get download URLs for all images used as fills in a Figma file (photos, textures, backgrounds)',
+    params: {
+      file_key: { type: 'string', description: 'Figma file key', required: true },
+    },
+    execute: async (params, config) => {
+      const fileKey = validatePathSegment(params.file_key, 'file_key');
+      return figmaFetch(`/files/${fileKey}/images`, config);
+    },
+  },
+  {
     name: 'get_team_projects',
     description: 'List projects for a Figma team',
     params: {

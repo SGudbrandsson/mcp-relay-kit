@@ -267,6 +267,7 @@ Design platform — inspect files, export images, manage comments, and browse te
 | `post_comment` | Post a comment on a file (supports threaded replies) |
 | `get_file_components` | Get published components in a file |
 | `get_file_styles` | Get published styles in a file |
+| `get_image_fills` | Get download URLs for all images used as fills (photos, textures, backgrounds) |
 | `get_team_projects` | List projects for a team |
 | `get_project_files` | List files in a project |
 | `get_team_components` | Get published components for a team library |
