@@ -36,6 +36,7 @@ Your AI calls `search` to discover what's available, then `execute` to use it.
 
 ```
 npm install -g mcp-relay-kit
+# or: npm install -g @clockwork-is/mcp-relay-kit
 ```
 
 ### Interactive setup
@@ -88,8 +89,7 @@ Add this to your project's `.mcp.json`:
 {
   "mcpServers": {
     "relay": {
-      "command": "node",
-      "args": ["/path/to/mcp-relay-kit/dist/server.js"],
+      "command": "mcp-relay-kit",
       "env": {
         "GATEWAY_CONFIG": "/path/to/your/config.json"
       }
@@ -98,7 +98,7 @@ Add this to your project's `.mcp.json`:
 }
 ```
 
-Replace the paths with your actual install location and config path.
+If installed globally, `mcp-relay-kit` is available as a command. Otherwise use `npx mcp-relay-kit` or the full path to `node_modules/.bin/mcp-relay-kit`.
 
 ## Proxy any MCP server
 

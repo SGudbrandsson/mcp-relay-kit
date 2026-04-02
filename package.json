@@ -1,5 +1,5 @@
 {
-  "name": "mcp-relay-kit",
+  "name": "@clockwork-is/mcp-relay-kit",
   "version": "0.1.0",
   "description": "Lightweight MCP relay — exposes multiple services (Asana, Slack, Sentry, PostHog, etc.) as 2 tools: search + execute",
   "type": "module",
